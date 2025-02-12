@@ -2,6 +2,7 @@ import api from "../../axiosConfig";
 import { API_ENDPOINTS } from "../endpoints";
 
 
+//get (read) api
 export const getPosts = async () => {
   try {
     let res = await api.get(API_ENDPOINTS.GET_POSTS);
@@ -11,6 +12,7 @@ export const getPosts = async () => {
 }
 }
 
+//delete api
 export const delPosts = async (id) => {
   try {
     let res = await api.delete(`${API_ENDPOINTS.DELETE_POSTS}/id=${id}`);
@@ -20,6 +22,7 @@ export const delPosts = async (id) => {
 }
 }
 
+//update api
 export const updatePosts = async (id,body) => {
   try {
     let res = await api.patch(`${API_ENDPOINTS.UPDATE_POSTS}/id=${id}`,body);
@@ -29,7 +32,8 @@ export const updatePosts = async (id,body) => {
   }
 }
 
-export const createPosts = async() => {
+//create api
+export const createPosts = async(id,body) => {
   try {
     let res = await api.post(`${API_ENDPOINTS.CREATE_POSTS}`, body)
     return res;
