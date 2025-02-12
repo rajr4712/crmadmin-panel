@@ -4,18 +4,27 @@ import { DocsComponents, DocsExample } from 'src/components'
 import axios from 'axios'
 import { MdDelete, MdEdit } from 'react-icons/md'
 import CustomModal from '../Modal'
-import { getPosts,delPosts , updatePosts} from '../../../services/apiService'
+import { getPosts, delPosts, updatePosts , createPosts} from '../../../services/apiService'
 import { IoCreateOutline } from 'react-icons/io5'
 import { IoIosCreate } from 'react-icons/io'
 
 const Tables = () => {
   const [data, setData] = useState([])
   const [showModal, setShowModal] = useState(false);
-  const [updateTitle , setUpdateTitle] = useState("");
+  const [updateTitle, setUpdateTitle] = useState("");
+  const [updateBody, setUpdateBody] = useState("");
   const [postsId, setPostsId] = useState("")
-  const [createPostModal , setCreatePostModal] = useState(false);
+  const [createPostModal, setCreatePostModal] = useState(false);
+  const [userId, setUserId] = useState("")
 
+  console.log("title", updateTitle);
   
+  console.log("id", userId);
+  console.log("body", updateBody);
+  
+  
+
+
   //Axios get - 
   const getApi = async () => {
     try {
@@ -33,59 +42,78 @@ const Tables = () => {
   const delApi = async (id) => {
     const isConfirmed = window.confirm("Are you sure you want to delete this item?");
     if (!isConfirmed) return;  // ❌ Stop if user cancels
-
     try {
       const response = await delPosts(id)
       console.log(response.data);
-      setData((prevData) => prevData.filter((item) =>item.id !== id))     // ✅ Remove deleted item from state
+      setData((prevData) => prevData.filter((item) => item.id !== id))     // ✅ Remove deleted item from state
     } catch (error) {
       console.log(error);
     }
   };
 
-
   //Axios Update(patch method -) - 
-  const updateApi = async() => {
-    console.log(updateTitle)
-    const body = { title:updateTitle}  //Body object create
+  const updateApi = async () => {
+    const body = { title: updateTitle , body: updateBody , userId: userId }
     try {
-      await updatePosts(postsId,body) 
-      setData((prevData) => prevData.map((item) => item.id === postsId ? {...item, title: updateTitle} : item))
+      await updatePosts(postsId, body)
+      setData((prevData) => prevData.map((item) => item.id === postsId ? { ...item, title: updateTitle ,body: updateBody , userId: userId} : item))
       setShowModal(false)
     } catch (error) {
       console.log(error)
     }
   }
 
-  
-//Axios Create Post - 
-const createApi = async() => {
-  try {
-    const response = await createPosts();
-  } catch(err) {
-    console.log(err)
+  //Axios Create Post - 
+  const createApi = async () => {
+    const body = {
+      title: updateTitle,
+      body: updateBody,
+      userId: userId,
+    }
+
+    try {
+      const response = await createPosts(postsId, body);
+      setData((prevData) => [...prevData, response.data]);
+      setCreatePostModal(false)
+    } catch (err) {
+      console.log(err)
+    }
   }
-}
 
-
+  //onchange function for input field
   const handleChange = (event) => {
-   setUpdateTitle(event.target.value);
-  }
-
+    const { id, value } = event.target;
+    if (id === "title") {
+      setUpdateTitle(value);
+    } else if (id === "body") {
+      setUpdateBody(value);
+    } else if(id === "userId"){
+      setUserId(value)
+    } 
+  };
+  
   const handleOpenModal = (index) => {
-    console.log("index--->" , index);
+    console.log("index--->", index);
     setPostsId(index);
     setShowModal(true)
   }
-  console.log("postID",postsId);
-   
-const handleOpenCreateModal = () => {
-  setCreatePostModal(true)
+  console.log("postID", postsId);
 
-}
+
+  const handleOpenCreateModal = () => {
+    setCreatePostModal(true)
+  }
+
+  const handleIdAdd = (event) => {
+    setUserId(event.target.value);
+    console.log("userId", userId)
+  }
+
+
+
   useEffect(() => {
     getApi();
-  },[])
+  }, [])
 
 
   return (
@@ -95,25 +123,29 @@ const handleOpenCreateModal = () => {
         <CCard className="mb-4">
           <CCardHeader>
             <div className='d-flex justify-content-between'>
-            <strong>React Table With Get Api : - </strong> <small>Variants</small>
-            <button className='border-0' onClick={handleOpenCreateModal}><IoIosCreate size={25}/></button>
-            </div> 
-                <CustomModal show={createPostModal}
-                    handleClose={() => setCreatePostModal(false)}
-                    handleClick={createApi}
-                    title="Custom Modal Title"
-                    body= {
-                      <div>
-                        <label id="title">title</label>
-                        <input type ="text" id="title" placeholder='edit your title here' />
+              <strong>React Table With Get Api : - </strong> <small>Variants</small>
+              <button className='border-0' onClick={handleOpenCreateModal}><IoIosCreate size={25} /></button>
+            </div>
+            <CustomModal show={createPostModal}
+              handleClose={() => setCreatePostModal(false)}
+              handleClick={createApi}
+              title="Create Table Data"
+              body = {
+                <div className='d-flex column-gap-2 flex-wrap row-gap-2'>
+                  <label id="userId">UserID</label>
+                  <input type="number" id="userId "placeholder='enter a id' onChange={handleIdAdd} />
 
-                        <label>TableID</label>
-                        <input type="number" placeholder='enter a id'/>
-                      </div>
-                    }
-                    primaryText="Update" 
-                    secondaryText="Cancel"
-                  />
+                  <label id="title">title</label>
+                  <input type="text" id="title" placeholder='edit your title here' onChange={handleChange}/>
+
+                  <label id="body">body</label>
+                  <input type="text" id="body" placeholder='enter a body' onChange={handleChange}/>
+                </div>
+                
+              } 
+              primaryText="Save"
+              secondaryText="Cancel"
+            />
           </CCardHeader>
           <CCardBody>
             <DocsExample href="components/table#variants">
@@ -121,8 +153,9 @@ const handleOpenCreateModal = () => {
                 <CTableHead>
                   <CTableRow>
                     <CTableHeaderCell scope="col">userId</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">TableID</CTableHeaderCell>
+                    <CTableHeaderCell scope="col">ID</CTableHeaderCell>
                     <CTableHeaderCell scope="col">title</CTableHeaderCell>
+                    <CTableHeaderCell scope="col">body</CTableHeaderCell>
                     <CTableHeaderCell scope="col">Action</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
@@ -135,6 +168,7 @@ const handleOpenCreateModal = () => {
                           <CTableHeaderCell scope="row">{item.userId}</CTableHeaderCell>
                           <CTableDataCell>{item.id}</CTableDataCell>
                           <CTableDataCell>{item.title}</CTableDataCell>
+                          <CTableDataCell>{item.body}</CTableDataCell>
                           <CTableDataCell className='d-flex edit-delete-con'>
                             <button onClick={() => handleOpenModal(item.id)}><MdEdit /></button>
                             <button onClick={() => delApi(item.id)} className='ms-2'><MdDelete /></button>
@@ -142,19 +176,25 @@ const handleOpenCreateModal = () => {
                         </CTableRow>
                       )
                     })
-                  } 
+                  }
 
                   <CustomModal show={showModal}
                     handleClose={() => setShowModal(false)}
                     handleClick={updateApi}
-                    title="Custom Modal Title"
-                    body= {
-                      <div>
+                    title="Update Table Data"
+                    body={
+                      <div className='d-flex column-gap-2 flex-wrap row-gap-2'>
                         <label id="title">title</label>
-                        <input type ="text" id="title" placeholder='edit your title here' onChange={handleChange} />
+                        <input type="text" id="title" placeholder='edit your title here' onChange={handleChange} />
+
+                        <label id="body">body</label>
+                        <input type="text" id="body" onChange={handleChange}/>
+
+                        <label id="userId">user iD</label>
+                        <input type="text" id="userId" onChange={handleChange}/>
                       </div>
                     }
-                    primaryText="Update" 
+                    primaryText="Update"
                     secondaryText="Cancel"
                   />
                 </CTableBody>
@@ -272,8 +312,8 @@ const handleOpenCreateModal = () => {
             </DocsExample>
           </CCardBody>
         </CCard>
-      </CCol>  
-     
+      </CCol>
+
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
@@ -380,8 +420,8 @@ const handleOpenCreateModal = () => {
           </CCardBody>
         </CCard>
       </CCol>
-    
-     <CCol xs={12}>
+
+      <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
             <strong>React Table</strong> <small>Bordered tables</small>
@@ -461,7 +501,7 @@ const handleOpenCreateModal = () => {
           </CCardBody>
         </CCard>
       </CCol>
-   
+
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
@@ -536,8 +576,8 @@ const handleOpenCreateModal = () => {
           </CCardBody>
         </CCard>
       </CCol>
-      
-    
+
+
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
@@ -621,10 +661,11 @@ const handleOpenCreateModal = () => {
           </CCardBody>
         </CCard>
       </CCol>
-      
-    
-</CRow>
+
+
+    </CRow>
   )
 }
 
 export default Tables
+
