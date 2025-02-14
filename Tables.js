@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { CCard, CCardBody, CCardHeader, CCol, CRow, CTable, CTableBody, CTableCaption, CTableDataCell, CTableHead, CTableHeaderCell, CTableRow, } from '@coreui/react'
+import { CCard, CCardBody, CCardFooter, CCardHeader, CCol, CRow, CTable, CTableBody, CTableCaption, CTableDataCell, CTableHead, CTableHeaderCell, CTableRow, } from '@coreui/react'
 import { DocsComponents, DocsExample } from 'src/components'
-import axios from 'axios'
 import { MdDelete, MdEdit } from 'react-icons/md'
 import CustomModal from '../Modal'
-import { getPosts, delPosts, updatePosts , createPosts} from '../../../services/apiService'
-import { IoCreateOutline } from 'react-icons/io5'
+import { getPosts, delPosts, updatePosts, createPosts } from '../../../services/apiService'
 import { IoIosCreate } from 'react-icons/io'
+import { toast } from 'react-toastify'
+import "./Table.css"
 
 const Tables = () => {
   const [data, setData] = useState([])
@@ -16,23 +16,26 @@ const Tables = () => {
   const [postsId, setPostsId] = useState("")
   const [createPostModal, setCreatePostModal] = useState(false);
   const [userId, setUserId] = useState("")
+  const [currentUserId, setCurrentUserId] = useState(1);
+
+  console.log(currentUserId);
 
   console.log("title", updateTitle);
-  
   console.log("id", userId);
   console.log("body", updateBody);
-  
-  
+
 
 
   //Axios get - 
-  const getApi = async () => {
+  const getApi = async (userId = 1) => {
     try {
-      const response = await getPosts()
+      const response = await getPosts(userId)
       const data = response.data;
-      console.log(data);
       setData(data);
+      toast.success('Data fetched successfully!'); // ✅ Success message
+      setCurrentUserId(userId); // Update active userId
     } catch (error) {
+      toast.error('Error fetching data: ' + error.message); // ❌ Error message
       console.log(error);
     }
   };
@@ -42,23 +45,28 @@ const Tables = () => {
   const delApi = async (id) => {
     const isConfirmed = window.confirm("Are you sure you want to delete this item?");
     if (!isConfirmed) return;  // ❌ Stop if user cancels
+
     try {
       const response = await delPosts(id)
       console.log(response.data);
+      toast.success("Item deleted successfully! 🎉");
       setData((prevData) => prevData.filter((item) => item.id !== id))     // ✅ Remove deleted item from state
     } catch (error) {
+      toast.error("Error deleting item: " + error.message);
       console.log(error);
     }
   };
 
   //Axios Update(patch method -) - 
   const updateApi = async () => {
-    const body = { title: updateTitle , body: updateBody , userId: userId }
+    const body = { title: updateTitle, body: updateBody, userId: userId }
     try {
       await updatePosts(postsId, body)
-      setData((prevData) => prevData.map((item) => item.id === postsId ? { ...item, title: updateTitle ,body: updateBody , userId: userId} : item))
+      setData((prevData) => prevData.map((item) => item.id === postsId ? { ...item, title: updateTitle, body: updateBody, userId: userId } : item))
+      toast.success("Item updated successfully! 🎉");
       setShowModal(false)
     } catch (error) {
+      toast.error("Failed to update item. Please try again.");
       console.log(error)
     }
   }
@@ -74,8 +82,10 @@ const Tables = () => {
     try {
       const response = await createPosts(postsId, body);
       setData((prevData) => [...prevData, response.data]);
+      toast.success("Item created successfully! ");
       setCreatePostModal(false)
     } catch (err) {
+      toast.warning("Failed to create item. Please try again.");
       console.log(err)
     }
   }
@@ -87,18 +97,17 @@ const Tables = () => {
       setUpdateTitle(value);
     } else if (id === "body") {
       setUpdateBody(value);
-    } else if(id === "userId"){
+    } else if (id === "userId") {
       setUserId(value)
-    } 
+    }
   };
-  
+
   const handleOpenModal = (index) => {
     console.log("index--->", index);
     setPostsId(index);
     setShowModal(true)
   }
   console.log("postID", postsId);
-
 
   const handleOpenCreateModal = () => {
     setCreatePostModal(true)
@@ -109,7 +118,11 @@ const Tables = () => {
     console.log("userId", userId)
   }
 
-
+  //pagination
+  const handlePageClick = (userId) => {
+    setCurrentUserId(userId);
+    getApi(userId);
+  };
 
   useEffect(() => {
     getApi();
@@ -130,19 +143,19 @@ const Tables = () => {
               handleClose={() => setCreatePostModal(false)}
               handleClick={createApi}
               title="Create Table Data"
-              body = {
-                <div className='d-flex column-gap-2 flex-wrap row-gap-2'>
+              body={
+                <div className='d-flex flex-column  row-gap-2'>
                   <label id="userId">UserID</label>
-                  <input type="number" id="userId "placeholder='enter a id' onChange={handleIdAdd} />
+                  <input type="number" id="userId " placeholder='enter a id' onChange={handleIdAdd} />
 
                   <label id="title">title</label>
-                  <input type="text" id="title" placeholder='edit your title here' onChange={handleChange}/>
+                  <input type="text" id="title" placeholder='edit your title here' onChange={handleChange} />
 
                   <label id="body">body</label>
-                  <input type="text" id="body" placeholder='enter a body' onChange={handleChange}/>
+                  <input type="text" id="body" placeholder='enter a body' onChange={handleChange} />
                 </div>
-                
-              } 
+
+              }
               primaryText="Save"
               secondaryText="Cancel"
             />
@@ -169,7 +182,7 @@ const Tables = () => {
                           <CTableDataCell>{item.id}</CTableDataCell>
                           <CTableDataCell>{item.title}</CTableDataCell>
                           <CTableDataCell>{item.body}</CTableDataCell>
-                          <CTableDataCell className='d-flex edit-delete-con'>
+                          <CTableDataCell className='d-flex edit-delete-icon'>
                             <button onClick={() => handleOpenModal(item.id)}><MdEdit /></button>
                             <button onClick={() => delApi(item.id)} className='ms-2'><MdDelete /></button>
                           </CTableDataCell>
@@ -183,15 +196,15 @@ const Tables = () => {
                     handleClick={updateApi}
                     title="Update Table Data"
                     body={
-                      <div className='d-flex column-gap-2 flex-wrap row-gap-2'>
+                      <div className='d-flex flex-column  flex-wrap row-gap-2'>
+                        <label id="userId">user iD</label>
+                        <input type="text" id="userId" onChange={handleChange} />
+
                         <label id="title">title</label>
                         <input type="text" id="title" placeholder='edit your title here' onChange={handleChange} />
 
                         <label id="body">body</label>
-                        <input type="text" id="body" onChange={handleChange}/>
-
-                        <label id="userId">user iD</label>
-                        <input type="text" id="userId" onChange={handleChange}/>
+                        <input type="text" id="body" onChange={handleChange} />
                       </div>
                     }
                     primaryText="Update"
@@ -201,471 +214,35 @@ const Tables = () => {
               </CTable>
             </DocsExample>
           </CCardBody>
+
+          <CCardFooter>
+            <div className="pagination">
+              <a href="#" onClick={(e) => { e.preventDefault(); handlePageClick(Math.max(1, currentUserId - 1)) }}>&laquo;</a>
+              {[1, 2, 3, 4, 5, 6].map((num) => (
+                <a
+                  key={num}
+                  href="#"
+                  className={currentUserId === num ? "active" : ""}
+                  onClick={(e) => {
+                    e.preventDefault(); // ✅ Prevents reload
+                    handlePageClick(num);
+                  }}
+                >
+                  {num}
+                </a>
+              ))}
+              <a href="#" onClick={(e) => { e.preventDefault(); handlePageClick(Math.min(6, currentUserId + 1)) }}>&raquo;</a>
+            </div>
+
+          </CCardFooter>
+
         </CCard>
       </CCol>
-
-      <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <strong>React Table</strong> <small>Striped rows</small>
-          </CCardHeader>
-          <CCardBody>
-            <p className="text-body-secondary small">
-              Use <code>striped</code> property to add zebra-striping to any table row within the{' '}
-              <code>&lt;CTableBody&gt;</code>.
-            </p>
-            <DocsExample href="components/table#striped-rows">
-              <CTable striped>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-            <p className="text-body-secondary small">
-              These classes can also be added to table variants:
-            </p>
-            <DocsExample href="components/table#striped-rows">
-              <CTable color="dark" striped>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-            <DocsExample href="components/table#striped-rows">
-              <CTable color="success" striped>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
-      <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <strong>React Table</strong> <small>Hoverable rows</small>
-          </CCardHeader>
-          <CCardBody>
-            <p className="text-body-secondary small">
-              Use <code>hover</code> property to enable a hover state on table rows within a{' '}
-              <code>&lt;CTableBody&gt;</code>.
-            </p>
-            <DocsExample href="components/table#hoverable-rows">
-              <CTable hover>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-            <DocsExample href="components/table#hoverable-rows">
-              <CTable color="dark" hover>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-            <DocsExample href="components/table#hoverable-rows">
-              <CTable striped hover>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
-      <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <strong>React Table</strong> <small>Bordered tables</small>
-          </CCardHeader>
-          <CCardBody>
-            <p className="text-body-secondary small">
-              Add <code>bordered</code> property for borders on all sides of the table and cells.
-            </p>
-            <DocsExample href="components/table#bordered-tables">
-              <CTable bordered>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-            <p className="text-body-secondary small">
-              <a href="https://coreui.io/docs/utilities/borders#border-color">
-                Border color utilities
-              </a>{' '}
-              can be added to change colors:
-            </p>
-            <DocsExample href="components/table#bordered-tables">
-              <CTable bordered borderColor="primary">
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
-      <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <strong>React Table</strong> <small>Tables without borders</small>
-          </CCardHeader>
-          <CCardBody>
-            <p className="text-body-secondary small">
-              Add <code>borderless</code> property for a table without borders.
-            </p>
-            <DocsExample href="components/table#tables-without-borders">
-              <CTable borderless>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-            <DocsExample href="components/table#tables-without-borders">
-              <CTable color="dark" borderless>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col">#</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Class</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Heading</CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">1</CTableHeaderCell>
-                    <CTableDataCell>Mark</CTableDataCell>
-                    <CTableDataCell>Otto</CTableDataCell>
-                    <CTableDataCell>@mdo</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">2</CTableHeaderCell>
-                    <CTableDataCell>Jacob</CTableDataCell>
-                    <CTableDataCell>Thornton</CTableDataCell>
-                    <CTableDataCell>@fat</CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableHeaderCell scope="row">3</CTableHeaderCell>
-                    <CTableDataCell colSpan={2}>Larry the Bird</CTableDataCell>
-                    <CTableDataCell>@twitter</CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
-
-      <CCol xs={12}>
-        <CCard className="mb-4">
-          <CCardHeader>
-            <strong>React Table</strong> <small>Vertical alignment</small>
-          </CCardHeader>
-          <CCardBody>
-            <p className="text-body-secondary small">
-              Table cells of <code>&lt;CTableHead&gt;</code> are always vertical aligned to the
-              bottom. Table cells in <code>&lt;CTableBody&gt;</code> inherit their alignment from{' '}
-              <code>&lt;CTable&gt;</code> and are aligned to the the top by default. Use the align
-              property to re-align where needed.
-            </p>
-            <DocsExample href="components/table#vertical-alignment">
-              <CTable align="middle" responsive>
-                <CTableHead>
-                  <CTableRow>
-                    <CTableHeaderCell scope="col" className="w-25">
-                      Heading 1
-                    </CTableHeaderCell>
-                    <CTableHeaderCell scope="col" className="w-25">
-                      Heading 2
-                    </CTableHeaderCell>
-                    <CTableHeaderCell scope="col" className="w-25">
-                      Heading 3
-                    </CTableHeaderCell>
-                    <CTableHeaderCell scope="col" className="w-25">
-                      Heading 4
-                    </CTableHeaderCell>
-                  </CTableRow>
-                </CTableHead>
-                <CTableBody>
-                  <CTableRow>
-                    <CTableDataCell>
-                      This cell inherits <code>vertical-align: middle;</code> from the table
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      This cell inherits <code>vertical-align: middle;</code> from the table
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      This cell inherits <code>vertical-align: middle;</code> from the table
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      This here is some placeholder text, intended to take up quite a bit of
-                      vertical space, to demonsCTableRowate how the vertical alignment works in the
-                      preceding cells.
-                    </CTableDataCell>
-                  </CTableRow>
-                  <CTableRow align="bottom">
-                    <CTableDataCell>
-                      This cell inherits <code>vertical-align: bottom;</code> from the table row
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      This cell inherits <code>vertical-align: bottom;</code> from the table row
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      This cell inherits <code>vertical-align: bottom;</code> from the table row
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      This here is some placeholder text, intended to take up quite a bit of
-                      vertical space, to demonsCTableRowate how the vertical alignment works in the
-                      preceding cells.
-                    </CTableDataCell>
-                  </CTableRow>
-                  <CTableRow>
-                    <CTableDataCell>
-                      This cell inherits <code>vertical-align: middle;</code> from the table
-                    </CTableDataCell>
-                    <CTableDataCell>
-                      This cell inherits <code>vertical-align: middle;</code> from the table
-                    </CTableDataCell>
-                    <CTableDataCell align="top">This cell is aligned to the top.</CTableDataCell>
-                    <CTableDataCell>
-                      This here is some placeholder text, intended to take up quite a bit of
-                      vertical space, to demonsCTableRowate how the vertical alignment works in the
-                      preceding cells.
-                    </CTableDataCell>
-                  </CTableRow>
-                </CTableBody>
-              </CTable>
-            </DocsExample>
-          </CCardBody>
-        </CCard>
-      </CCol>
-
 
     </CRow>
   )
 }
 
 export default Tables
+
 
