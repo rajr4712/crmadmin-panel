@@ -3,9 +3,9 @@ import { API_ENDPOINTS } from "../endpoints";
 
 
 //get (read) api
-export const getPosts = async () => {
+export const getPosts = async (userId = 1) => {
   try {
-    let res = await api.get(API_ENDPOINTS.GET_POSTS);
+    let res = await api.get(`${API_ENDPOINTS.GET_POSTS}?userId=${userId}`);    //only user id 1 data is fetched
     return res;
   } catch (error) {
     console.log(error)   
@@ -15,7 +15,7 @@ export const getPosts = async () => {
 //delete api
 export const delPosts = async (id) => {
   try {
-    let res = await api.delete(`${API_ENDPOINTS.DELETE_POSTS}/id=${id}`);
+    let res = await api.delete(`${API_ENDPOINTS.DELETE_POSTS}/${id}`);
     return res;
   } catch (error) {
     console.log(error)   
@@ -25,7 +25,7 @@ export const delPosts = async (id) => {
 //update api
 export const updatePosts = async (id,body) => {
   try {
-    let res = await api.patch(`${API_ENDPOINTS.UPDATE_POSTS}/id=${id}`,body);
+    let res = await api.patch(`${API_ENDPOINTS.UPDATE_POSTS}/${id}`,body);
     return res;
   } catch (error) {
     console.log(error)
@@ -33,7 +33,7 @@ export const updatePosts = async (id,body) => {
 }
 
 //create api
-export const createPosts = async(id,body) => {
+export const createPosts = async(tableId,body) => {
   try {
     let res = await api.post(`${API_ENDPOINTS.CREATE_POSTS}`, body)
     return res;
