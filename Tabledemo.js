@@ -24,31 +24,6 @@ const Tables = () => {
   console.log('updateTitle', updateTitle)
   console.log('updateBody', updateBody)
 
-  const handleShow = (id, index) => {
-    setPostsId(index)
-    const selectedPost = data.find((item) => item.id === id)
-    if (selectedPost) {
-      setUserId(selectedPost.userId)
-      setUpdateTitle(selectedPost.title)
-      setUpdateBody(selectedPost.body)
-    }
-    setShow(true)
-  }
-
-  const handleClose = () => {
-    setShow(false)
-    setCreatePostModal(false)
-  }
-
-  const handleChange = (e) => {
-    if (e.target.id === 'userId') {
-      setUserId(e.target.value)
-    } else if (e.target.id === 'title') {
-      setUpdateTitle(e.target.value)
-    } else if (e.target.id === 'body') {
-      setUpdateBody(e.target.value)
-    }
-  }
 
   //get api -
   const getPostData = async () => {
@@ -116,9 +91,53 @@ const Tables = () => {
     }
   }
 
+  const handleShow = (id, index) => {
+    setPostsId(index)
+    const selectedPost = data.find((item) => item.id === id)
+    if (selectedPost) {
+      setUserId(selectedPost.userId)
+      setUpdateTitle(selectedPost.title)
+      setUpdateBody(selectedPost.body)
+    }
+    setShow(true)
+  }
+
+  const handleClose = () => {
+    setShow(false)
+    setCreatePostModal(false)
+  }
+
+  // const handleChange = (e) => {
+  //   if (e.target.id === 'userId') {
+  //     setUserId(e.target.value)
+  //   } else if (e.target.id === 'title') {
+  //     setUpdateTitle(e.target.value)
+  //   } else if (e.target.id === 'body') {
+  //     setUpdateBody(e.target.value)
+  //   }
+  // }
+
+  //handlechange function accroding to validation
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    if (id === 'userId') {
+      setUserId(value);
+      setFormError((prev) => ({ ...prev, userId: '' })); // Clear error for userId
+    } else if (id === 'title') {
+      setUpdateTitle(value);
+      setFormError((prev) => ({ ...prev, updateTitle: '' })); // Clear error for title
+    } else if (id === 'body') {
+      setUpdateBody(value);
+      setFormError((prev) => ({ ...prev, updateBody: '' })); // Clear error for body
+    }
+  };
+  
+
   const handleOpencreateModal = () => {
     setCreatePostModal(true)
   }
+
+  //validation code
   const handleSubmit = (e) => {
     e.preventDefault()
     const errors = validate(userId, updateTitle, updateBody)
@@ -292,3 +311,4 @@ const Tables = () => {
 }
 
 export default Tables
+
