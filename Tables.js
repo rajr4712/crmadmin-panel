@@ -1,3 +1,6 @@
+
+
+
 import React, { useEffect, useState } from 'react'
 import { CCard, CCardBody, CCardFooter, CCardHeader, CCol, CRow, CTable, CTableBody, CTableCaption, CTableDataCell, CTableHead, CTableHeaderCell, CTableRow, } from '@coreui/react'
 import { DocsComponents, DocsExample } from 'src/components'
@@ -5,21 +8,21 @@ import { MdDelete, MdEdit } from 'react-icons/md'
 import CustomModal from '../Modal'
 import { getPosts, delPosts, updatePosts, createPosts } from '../../../services/apiService'
 import { IoIosCreate } from 'react-icons/io'
-import { toast } from 'react-toastify'
+import { toast } from'react-toastify'
 import "./Table.css"
+import SweetAlert from '../../../SweetAlert/Swal'
 
 const Tables = () => {
   const [data, setData] = useState([])
   const [showModal, setShowModal] = useState(false);
+  const [userId, setUserId] = useState("")
   const [updateTitle, setUpdateTitle] = useState("");
   const [updateBody, setUpdateBody] = useState("");
   const [postsId, setPostsId] = useState("")
   const [createPostModal, setCreatePostModal] = useState(false);
-  const [userId, setUserId] = useState("")
   const [currentUserId, setCurrentUserId] = useState(1);
 
   console.log(currentUserId);
-
   console.log("title", updateTitle);
   console.log("id", userId);
   console.log("body", updateBody);
@@ -32,10 +35,10 @@ const Tables = () => {
       const response = await getPosts(userId)
       const data = response.data;
       setData(data);
-      toast.success('Data fetched successfully!'); // ✅ Success message
+      toast.success('Data fetched successfully!'); 
       setCurrentUserId(userId); // Update active userId
     } catch (error) {
-      toast.error('Error fetching data: ' + error.message); // ❌ Error message
+      toast.error('Error fetching data: ' + error.message); 
       console.log(error);
     }
   };
@@ -43,14 +46,17 @@ const Tables = () => {
 
   //Axios delete - 
   const delApi = async (id) => {
-    const isConfirmed = window.confirm("Are you sure you want to delete this item?");
-    if (!isConfirmed) return;  // ❌ Stop if user cancels
+    // const isConfirmed = window.confirm("Are you sure you want to delete this item?");
+    // if (!isConfirmed) return;  // Stop if user cancels
+
+    const isConfirmed = await SweetAlert("");
+    if (!isConfirmed) return;  
 
     try {
       const response = await delPosts(id)
       console.log(response.data);
       toast.success("Item deleted successfully! 🎉");
-      setData((prevData) => prevData.filter((item) => item.id !== id))     // ✅ Remove deleted item from state
+      setData((prevData) => prevData.filter((item) => item.id !== id))     // Remove deleted item from state
     } catch (error) {
       toast.error("Error deleting item: " + error.message);
       console.log(error);
@@ -61,24 +67,23 @@ const Tables = () => {
   const updateApi = async () => {
     const body = { title: updateTitle, body: updateBody, userId: userId }
     try {
-      await updatePosts(postsId, body)
+     const response = await updatePosts(postsId, body)
+     console.log(response.data);
       setData((prevData) => prevData.map((item) => item.id === postsId ? { ...item, title: updateTitle, body: updateBody, userId: userId } : item))
-      toast.success("Item updated successfully! 🎉");
       setShowModal(false)
     } catch (error) {
-      toast.error("Failed to update item. Please try again.");
       console.log(error)
     }
   }
 
   //Axios Create Post - 
   const createApi = async () => {
-    const body = {
-      title: updateTitle,
-      body: updateBody,
-      userId: userId,
+    //validation for empty fields
+    if (!updateTitle.trim() || !updateBody.trim() || !userId.trim()) {
+      toast.warning("All fields are required!");
+      return;
     }
-
+    const body = { title: updateTitle,  body: updateBody, userId: userId}
     try {
       const response = await createPosts(postsId, body);
       setData((prevData) => [...prevData, response.data]);
@@ -102,20 +107,19 @@ const Tables = () => {
     }
   };
 
-  const handleOpenModal = (index) => {
-    console.log("index--->", index);
-    setPostsId(index);
-    setShowModal(true)
-  }
-  console.log("postID", postsId);
-
+  const handleOpenModal = (id) => {
+    const selectedPost = data.find((item) => item.id === id);
+    if (selectedPost) {
+      setPostsId(selectedPost.id);
+      setUpdateTitle(selectedPost.title);
+      setUpdateBody(selectedPost.body);
+      setUserId(selectedPost.userId);
+      setShowModal(true);
+    }
+  };
+  
   const handleOpenCreateModal = () => {
     setCreatePostModal(true)
-  }
-
-  const handleIdAdd = (event) => {
-    setUserId(event.target.value);
-    console.log("userId", userId)
   }
 
   //pagination
@@ -131,31 +135,30 @@ const Tables = () => {
 
   return (
     <CRow>
-      {/*My Table */}
+     {/*My Table */}
       <CCol xs={12}>
         <CCard className="mb-4">
           <CCardHeader>
             <div className='d-flex justify-content-between'>
-              <strong>React Table With Get Api : - </strong> <small>Variants</small>
+              <strong>React Table Post Data </strong>
               <button className='border-0' onClick={handleOpenCreateModal}><IoIosCreate size={25} /></button>
             </div>
             <CustomModal show={createPostModal}
               handleClose={() => setCreatePostModal(false)}
-              handleClick={createApi}
-              title="Create Table Data"
+              handleClick={createApi} 
+              title="Add Post"
               body={
-                <div className='d-flex flex-column  row-gap-2'>
+                <div  className='d-flex flex-column  row-gap-2'>
                   <label id="userId">UserID</label>
-                  <input type="number" id="userId " placeholder='enter a id' onChange={handleIdAdd} />
+                  <input type="number" id="userId" placeholder='enter a user id' value={userId} onChange={handleChange} required/>
 
                   <label id="title">title</label>
-                  <input type="text" id="title" placeholder='edit your title here' onChange={handleChange} />
+                  <input type="text" id="title" placeholder='edit your title here' value={updateTitle} onChange={handleChange} required/>
 
                   <label id="body">body</label>
-                  <input type="text" id="body" placeholder='enter a body' onChange={handleChange} />
+                  <input type="text" id="body" placeholder='enter a body' value={updateBody} onChange={handleChange} required/>
                 </div>
-
-              }
+              } 
               primaryText="Save"
               secondaryText="Cancel"
             />
@@ -165,10 +168,10 @@ const Tables = () => {
               <CTable>
                 <CTableHead>
                   <CTableRow>
-                    <CTableHeaderCell scope="col">userId</CTableHeaderCell>
+                    <CTableHeaderCell scope="col">UserId</CTableHeaderCell>
                     <CTableHeaderCell scope="col">ID</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">title</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">body</CTableHeaderCell>
+                    <CTableHeaderCell scope="col">Title</CTableHeaderCell>
+                    <CTableHeaderCell scope="col">Body</CTableHeaderCell>
                     <CTableHeaderCell scope="col">Action</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
@@ -178,8 +181,8 @@ const Tables = () => {
                     data.map((item, index) => {
                       return (
                         <CTableRow color="primary">
-                          <CTableHeaderCell scope="row">{item.userId}</CTableHeaderCell>
-                          <CTableDataCell>{item.id}</CTableDataCell>
+                            <CTableDataCell>{item.id}</CTableDataCell>
+                          <CTableHeaderCell scope="row">{item.userId}</CTableHeaderCell>                    
                           <CTableDataCell>{item.title}</CTableDataCell>
                           <CTableDataCell>{item.body}</CTableDataCell>
                           <CTableDataCell className='d-flex edit-delete-icon'>
@@ -194,17 +197,17 @@ const Tables = () => {
                   <CustomModal show={showModal}
                     handleClose={() => setShowModal(false)}
                     handleClick={updateApi}
-                    title="Update Table Data"
-                    body={
+                    title="Update Post"
+                    body= {   
                       <div className='d-flex flex-column  flex-wrap row-gap-2'>
                         <label id="userId">user iD</label>
-                        <input type="text" id="userId" onChange={handleChange} />
+                        <input type="number" id="userId" value={userId} onChange={handleChange} required/>     
 
                         <label id="title">title</label>
-                        <input type="text" id="title" placeholder='edit your title here' onChange={handleChange} />
+                        <input type="text" id="title" value={updateTitle} placeholder='edit your title here' onChange={handleChange}  required/>
 
                         <label id="body">body</label>
-                        <input type="text" id="body" onChange={handleChange} />
+                        <input type="text" id="body" value={updateBody} onChange={handleChange} required/>
                       </div>
                     }
                     primaryText="Update"
@@ -224,7 +227,7 @@ const Tables = () => {
                   href="#"
                   className={currentUserId === num ? "active" : ""}
                   onClick={(e) => {
-                    e.preventDefault(); // ✅ Prevents reload
+                    e.preventDefault(); //by default reload stop !
                     handlePageClick(num);
                   }}
                 >
@@ -244,5 +247,3 @@ const Tables = () => {
 }
 
 export default Tables
-
-
