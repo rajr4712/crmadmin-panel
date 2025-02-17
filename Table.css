@@ -1,0 +1,19 @@
+.pagination {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+  }
+  
+  .pagination a {
+    color: black;
+    padding:7px 16px;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  
+  .pagination a.active {
+    background-color: blue;
+    color: white;
+    font-weight: bold;
+  }
+  
