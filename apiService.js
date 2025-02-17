@@ -1,5 +1,6 @@
 import api from "../../axiosConfig";
 import { API_ENDPOINTS } from "../endpoints";
+import { toast } from 'react-toastify'
 
 
 //get (read) api
@@ -26,8 +27,10 @@ export const delPosts = async (id) => {
 export const updatePosts = async (id,body) => {
   try {
     let res = await api.patch(`${API_ENDPOINTS.UPDATE_POSTS}/${id}`,body);
+    toast.success("Item updated successfully! 🎉");
     return res;
   } catch (error) {
+    toast.error("Failed to update item. Please try again.");
     console.log(error)
   }
 }
