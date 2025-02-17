@@ -134,6 +134,10 @@ const Tables = () => {
   
 
   const handleOpencreateModal = () => {
+    setUserId('');      // Reset userId
+    setUpdateTitle(''); // Reset title
+    setUpdateBody('');  // Reset body  (so that previous values are not shown of edit modal ka)
+    setFormError({});   // Clear validation errors also (so that previous errors are not shown)
     setCreatePostModal(true)
   }
 
@@ -224,8 +228,8 @@ const Tables = () => {
               <CTable>
                 <CTableHead>
                   <CTableRow>
-                    <CTableHeaderCell scope="col">UserID</CTableHeaderCell>
-                    <CTableHeaderCell scope="col">Id</CTableHeaderCell>
+                  <CTableHeaderCell scope="col">Id</CTableHeaderCell>
+                    <CTableHeaderCell scope="col">UserID</CTableHeaderCell>     
                     <CTableHeaderCell scope="col">Title</CTableHeaderCell>
                     <CTableHeaderCell scope="col">Body</CTableHeaderCell>
                     <CTableHeaderCell scope="col">Action</CTableHeaderCell>
@@ -235,8 +239,8 @@ const Tables = () => {
                   {data.map((item, index) => {
                     return (
                       <CTableRow color="primary" key={index}>
-                        <CTableHeaderCell scope="row">{item.userId}</CTableHeaderCell>
-                        <CTableDataCell>{item.id}</CTableDataCell>
+                      <CTableDataCell>{item.id}</CTableDataCell>
+                        <CTableHeaderCell scope="row">{item.userId}</CTableHeaderCell>              
                         <CTableDataCell>{item.title}</CTableDataCell>
                         <CTableDataCell>{item.body}</CTableDataCell>
 
@@ -311,4 +315,3 @@ const Tables = () => {
 }
 
 export default Tables
-
