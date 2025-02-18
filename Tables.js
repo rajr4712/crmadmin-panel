@@ -1,6 +1,3 @@
-
-
-
 import React, { useEffect, useState } from 'react'
 import { CCard, CCardBody, CCardFooter, CCardHeader, CCol, CRow, CTable, CTableBody, CTableCaption, CTableDataCell, CTableHead, CTableHeaderCell, CTableRow, } from '@coreui/react'
 import { DocsComponents, DocsExample } from 'src/components'
@@ -20,13 +17,15 @@ const Tables = () => {
   const [updateBody, setUpdateBody] = useState("");
   const [postsId, setPostsId] = useState("")
   const [createPostModal, setCreatePostModal] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState(1);
+  const [currentUserId, setCurrentUserId] = useState(1);           //currentUserId is used for pagination .
+  const [formError, setFormError] = useState({})
 
   console.log(currentUserId);
   console.log("title", updateTitle);
   console.log("id", userId);
   console.log("body", updateBody);
-
+  console.log("postId", postsId);
+  console.log("formError", formError);
 
 
   //Axios get - 
@@ -34,8 +33,8 @@ const Tables = () => {
     try {
       const response = await getPosts(userId)
       const data = response.data;
-      setData(data);
       toast.success('Data fetched successfully!'); 
+      setData(data); 
       setCurrentUserId(userId); // Update active userId
     } catch (error) {
       toast.error('Error fetching data: ' + error.message); 
@@ -56,12 +55,13 @@ const Tables = () => {
       const response = await delPosts(id)
       console.log(response.data);
       toast.success("Item deleted successfully! 🎉");
-      setData((prevData) => prevData.filter((item) => item.id !== id))     // Remove deleted item from state
+      setData((prevData) => prevData.filter((item) => item.id !== id))   // Remove deleted item from state
     } catch (error) {
       toast.error("Error deleting item: " + error.message);
       console.log(error);
     }
   };
+
 
   //Axios Update(patch method -) - 
   const updateApi = async () => {
@@ -78,34 +78,37 @@ const Tables = () => {
 
   //Axios Create Post - 
   const createApi = async () => {
-    //validation for empty fields
-    if (!updateTitle.trim() || !updateBody.trim() || !userId.trim()) {
-      toast.warning("All fields are required!");
-      return;
-    }
     const body = { title: updateTitle,  body: updateBody, userId: userId}
     try {
       const response = await createPosts(postsId, body);
       setData((prevData) => [...prevData, response.data]);
       toast.success("Item created successfully! ");
+      // Clear input fields after successful creation
+      setUserId('')
+      setUpdateTitle('')
+      setUpdateBody('')
+      setFormError({}) // Clear validation errors
       setCreatePostModal(false)
-    } catch (err) {
-      toast.warning("Failed to create item. Please try again.");
-      console.log(err)
+    } catch (error) {
+      toast.error('Failed to create item. Please try again.')
+      console.log(error)
     }
   }
 
-  //onchange function for input field
-  const handleChange = (event) => {
-    const { id, value } = event.target;
-    if (id === "title") {
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    if (id === 'userId') {
+      setUserId(value);
+      setFormError((prev) => ({ ...prev, userId: '' })); // Clear error for userId of prvs value same as below code !
+    } else if (id === 'title') {
       setUpdateTitle(value);
-    } else if (id === "body") {
+      setFormError((prev) => ({ ...prev, updateTitle: '' }));
+    } else if (id === 'body') {
       setUpdateBody(value);
-    } else if (id === "userId") {
-      setUserId(value)
-    }
+      setFormError((prev) => ({ ...prev, updateBody: '' })); 
+    }444444
   };
+  
 
   const handleOpenModal = (id) => {
     const selectedPost = data.find((item) => item.id === id);
@@ -119,8 +122,39 @@ const Tables = () => {
   };
   
   const handleOpenCreateModal = () => {
+    setUserId('');      // Reset userId
+    setUpdateTitle(''); // Reset title
+    setUpdateBody('');  // Reset body  (so that previous values are not shown of edit modal ka)
+    setFormError({});   // Clear validation errors also (so that previous errors are not shown)
     setCreatePostModal(true)
   }
+
+
+  const validate = (userId, updateTitle, updateBody) => {
+    const error = {}
+    if (!userId) {
+      error.userId = 'User Id is required'    //if user id is empty then error message(User Id is required) is stored in the error object.
+    }
+    if (!updateTitle) {
+      error.updateTitle = 'Title is required'
+    }
+    if (!updateBody) {
+      error.updateBody = 'Body is required'
+    }
+    return error
+  }
+
+ //validation code
+ const handleSubmit = (e) => {
+  e.preventDefault()
+  const errors = validate(userId, updateTitle, updateBody)
+  setFormError(errors)
+
+  if (Object.keys(errors).length === 0) {
+    createApi() // Call API only if no validation errors
+  }
+}
+
 
   //pagination
   const handlePageClick = (userId) => {
@@ -140,37 +174,40 @@ const Tables = () => {
         <CCard className="mb-4">
           <CCardHeader>
             <div className='d-flex justify-content-between'>
-              <strong>React Table Post Data </strong>
+              <strong>React CRUD Post </strong>
               <button className='border-0' onClick={handleOpenCreateModal}><IoIosCreate size={25} /></button>
             </div>
             <CustomModal show={createPostModal}
               handleClose={() => setCreatePostModal(false)}
-              handleClick={createApi} 
+              handleClick={handleSubmit} 
               title="Add Post"
               body={
                 <div  className='d-flex flex-column  row-gap-2'>
-                  <label id="userId">UserID</label>
+                  <label id="userId">UserID<span className='text-danger'>*</span></label>
                   <input type="number" id="userId" placeholder='enter a user id' value={userId} onChange={handleChange} required/>
+                  {formError.userId && <span className="text-danger">{formError.userId}</span>}
 
-                  <label id="title">title</label>
+                  <label id="title">title<span className='text-danger'>*</span></label>
                   <input type="text" id="title" placeholder='edit your title here' value={updateTitle} onChange={handleChange} required/>
+                  {formError.updateTitle && <span className="text-danger">{formError.updateTitle}</span>}
 
-                  <label id="body">body</label>
+                  <label id="body">body<span className='text-danger'>*</span></label>
                   <input type="text" id="body" placeholder='enter a body' value={updateBody} onChange={handleChange} required/>
+                  {formError.updateBody && <span className="text-danger">{formError.updateBody}</span>}
                 </div>
               } 
-              primaryText="Save"
+              primaryText="Add"
               secondaryText="Cancel"
             />
           </CCardHeader>
           <CCardBody>
-            <DocsExample href="components/table#variants">
               <CTable>
                 <CTableHead>
                   <CTableRow>
-                    <CTableHeaderCell scope="col">UserId</CTableHeaderCell>
                     <CTableHeaderCell scope="col">ID</CTableHeaderCell>
+                    <CTableHeaderCell scope="col">UserId</CTableHeaderCell>
                     <CTableHeaderCell scope="col">Title</CTableHeaderCell>
+                    <CTableHeaderCell scope="col">Body</CTableHeaderCell>
                     <CTableHeaderCell scope="col">Body</CTableHeaderCell>
                     <CTableHeaderCell scope="col">Action</CTableHeaderCell>
                   </CTableRow>
@@ -185,15 +222,15 @@ const Tables = () => {
                           <CTableHeaderCell scope="row">{item.userId}</CTableHeaderCell>                    
                           <CTableDataCell>{item.title}</CTableDataCell>
                           <CTableDataCell>{item.body}</CTableDataCell>
-                          <CTableDataCell className='d-flex edit-delete-icon'>
+                          <CTableDataCell>{item.body}</CTableDataCell>
+                          <CTableDataCell className='d-flex w-100 h-100 py-4 column-gap-2'>
                             <button onClick={() => handleOpenModal(item.id)}><MdEdit /></button>
-                            <button onClick={() => delApi(item.id)} className='ms-2'><MdDelete /></button>
+                            <button onClick={() => delApi(item.id)}><MdDelete /></button>
                           </CTableDataCell>
                         </CTableRow>
                       )
                     })
                   }
-
                   <CustomModal show={showModal}
                     handleClose={() => setShowModal(false)}
                     handleClick={updateApi}
@@ -215,7 +252,7 @@ const Tables = () => {
                   />
                 </CTableBody>
               </CTable>
-            </DocsExample>
+     
           </CCardBody>
 
           <CCardFooter>
@@ -236,7 +273,6 @@ const Tables = () => {
               ))}
               <a href="#" onClick={(e) => { e.preventDefault(); handlePageClick(Math.min(6, currentUserId + 1)) }}>&raquo;</a>
             </div>
-
           </CCardFooter>
 
         </CCard>
@@ -247,3 +283,4 @@ const Tables = () => {
 }
 
 export default Tables
+
