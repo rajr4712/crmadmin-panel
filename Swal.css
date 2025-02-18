@@ -1,0 +1,31 @@
+.custom-swal-popup {
+    width: 320px !important;
+    height: auto !important;
+    border-radius: 10px;
+    padding-block: 20px;
+  }
+  
+.custom-swal-title {
+    font-size: 20px !important;
+    font-weight: bold;
+    color: #333;
+  }
+  
+
+  .custom-swal-confirm {
+    background-color: #603fbb !important;
+    border-color: #4caf50 !important;
+    font-size: 14px;
+  }
+  
+  .custom-swal-cancel {
+    background-color: #d1625a !important;
+    border-color: #f44336 !important;
+    font-size: 14px;
+  }
+  
+  .swal2-icon {
+    height: 40px !important;
+    width: 40px !important;
+    display: none;
+  }
